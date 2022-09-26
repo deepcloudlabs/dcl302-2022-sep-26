@@ -1,0 +1,25 @@
+// outer loop
+for (let i=0;i<numbers.length;++i){
+    console.log(numbers[i]);
+}
+
+for (let i in numbers){
+    console.log(`${i}: ${numbers[i]}`);
+}
+
+for (let number of numbers){
+    console.log(number);
+}
+
+// inner loop
+// pure function -> lambda expression
+let printElement = function(value,index){ // no side-effect
+    console.log(`${index} : ${value}`);
+}
+
+// higher-order function
+numbers.forEach(printElement)
+numbers.forEach(function(value,index){
+                    console.log(`${index} : ${value}`);
+})
+numbers.forEach((value,index) => console.log(`${index} : ${value}`))

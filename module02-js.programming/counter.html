@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Counter</title>
+    <script type="text/javascript">
+        let app = function () {
+            let counter = 0; // model
+            let counterSpan = document.querySelector("#counter");
+            // synchronous -> blocking
+            let increment = function () {
+                counter++;
+                counterSpan.innerHTML = counter.toString();
+            }
+            // 1. higher-order function
+            // 2. asynchronous function -> non-blocking function / callback function
+            // 3. event-driven programming: timeout -> increment
+            let timer = setInterval(increment, 1000);
+            // clearInterval(timer);
+        }
+        // event-driven
+        // Event (onload) -> app
+        window.onload = app; // registers app function
+        // JS Engine -> VM ( GC, JIT Compiler, ... )
+        // asynchronous programming -> reactive programming
+        //                          -> reactive stream -> reactive system
+    </script>
+</head>
+<body>
+<div>Counter: <span id="counter">0</span></div>
+</body>
+</html>

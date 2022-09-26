@@ -1,0 +1,15 @@
+{
+  "name": "first-nodeapp",
+  "version": "1.0.0",
+  "description": "Lottery Application",
+  "main": "server.js",
+  "scripts": {
+    "middleware": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "Binnur Kurt <binnur.kurt@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "nodemon": "^2.0.20"
+  }
+}
