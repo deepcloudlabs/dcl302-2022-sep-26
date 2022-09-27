@@ -4,11 +4,12 @@ const mongoose = require("mongoose");
 const mongodb_url = "mongodb://localhost:27017/hrdb";
 const collection_name = "employees";
 const mongo_opts = {
-  "useNewUrlParser": true,
-  "socketTimeoutMS": 0,
-  "keepAlive": true,
-  "useCreateIndex": true,
-  "useUnifiedTopology": true
+    "useNewUrlParser": true,
+    "socketTimeoutMS": 0,
+    "keepAlive": true,
+    "useCreateIndex": true,
+    "useFindAndModify": false,
+    "useUnifiedTopology": true
 };
 
 mongoose.connect(mongodb_url, mongo_opts);
@@ -98,18 +99,17 @@ console.log(`Server is listening the port ${port}`);
 
 const swaggerUi = require("swagger-ui-express");
 const openApiDoc = require("./swagger-hr.json");
-api.use("/api-docs",swaggerUi.serve, swaggerUi.setup(openApiDoc));
+api.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiDoc));
 
 //endregion
 
 //region http get endpoints
-api.get("/hr/api/v1/employees/:identity",async (req,res) =>
-    {
+api.get("/hr/api/v1/employees/:identity", async (req, res) => {
         const identity = req.params.identity;
         Employee.findOne(
             {"identityNo": identity},
             {"_id": false, "photo": false},
-            async (err,emp) => {
+            async (err, emp) => {
                 res.set("Content-Type", "application/json");
                 if (err)
                     res.status(404).send({status: err});
@@ -120,13 +120,12 @@ api.get("/hr/api/v1/employees/:identity",async (req,res) =>
     }
 );
 
-api.get("/hr/api/v1/employees/:identity/photo",async (req,res) =>
-    {
+api.get("/hr/api/v1/employees/:identity/photo", async (req, res) => {
         const identity = req.params.identity;
         Employee.findOne(
             {"identityNo": identity},
             {"_id": false, "photo": true},
-            async (err,emp) => {
+            async (err, emp) => {
                 res.set("Content-Type", "application/json");
                 if (err)
                     res.status(404).send({status: err});
@@ -138,8 +137,7 @@ api.get("/hr/api/v1/employees/:identity/photo",async (req,res) =>
 );
 
 // GET http://localhost:8100/hr/api/v1/employees?page=10&size=25
-api.get("/hr/api/v1/employees",async (req,res) =>
-    {
+api.get("/hr/api/v1/employees", async (req, res) => {
         const page = Number(req.query.page || 0);
         const size = Number(req.query.size || 20);
         const offset = page * size;
@@ -147,7 +145,7 @@ api.get("/hr/api/v1/employees",async (req,res) =>
             {},
             {"_id": false, "photo": false},
             {skip: offset, limit: size},
-            async (err,employees) => {
+            async (err, employees) => {
                 res.set("Content-Type", "application/json");
                 if (err)
                     res.status(404).send({status: err});
@@ -162,30 +160,77 @@ api.get("/hr/api/v1/employees",async (req,res) =>
 
 //region REST on http API
 // 1. Resource-oriented API: Employee <- resource
-// ✘ Hire employee -> POST Employee
-// ✘ Fire employee -> DELETE tcKimlikNo -> Employee
+// ✔ Hire employee -> POST Employee
+// ✔ Fire employee -> DELETE tcKimlikNo -> Employee
 // ✔ Get info about employee(s) -> GET tcKimlikNo
-// ✘ Update employee's salary/iban/department/photo/fulltime -> PUT/PATCH
-api.post("/hr/api/v1/employees", async (req,res)=>
-    {
+// ✔ Update employee's salary/iban/department/photo/fulltime -> PUT/PATCH
+//     i. supports both PUT and PATCH
+//    ii. ✘ identityNo, ✘ birthYear
+//        ✔ salary, ✔ fullname, ✔ department, ✔ fulltime, ✔ iban, ✔ photo
+
+const updatableFields = ["salary", "fullname", "department", "fulltime", "iban", "photo"];
+
+async function putOrPatchEmployee(req,res){
+    const emp = req.body;
+    const identity = emp.identityNo;
+    let updatedEmp = {};
+    for (let field in emp){
+        if (updatableFields.includes(field))
+            updatedEmp[field] = emp[field];
+    }
+    Employee.findOneAndUpdate(
+        {"identityNo": identity},
+        {"$set": updatedEmp},
+        {upsert: false},
+        (err, document) => {
+            res.set("Content-Type", "application/json");
+            if (err) {
+                res.status(400).send({status: err});
+            } else {
+                res.status(200).send({...document._doc,...updatedEmp});
+            }
+        }
+    );
+}
+api.put("/hr/api/v1/employees/:identity",putOrPatchEmployee);
+api.patch("/hr/api/v1/employees/:identity",putOrPatchEmployee);
+
+
+api.post("/hr/api/v1/employees", async (req, res) => {
         const emp = req.body;
         emp._id = emp.identityNo;
         let employee = new Employee(emp);
-        employee.save((err,hiredEmployee)=>
-            {
-               res.set("Content-Type","application/json");
-               if (err){
-                   res.status(400).send({status: err});
-               } else {
-                   res.status(200).send(hiredEmployee);
-               }
+        employee.save((err, hiredEmployee) => {
+                res.set("Content-Type", "application/json");
+                if (err) {
+                    res.status(400).send({status: err});
+                } else {
+                    res.status(200).send(hiredEmployee);
+                }
+            }
+        );
+    }
+)
+
+api.delete("/hr/api/v1/employees/:identity", async (req, res) => {
+        const identity = req.params.identity;
+        Employee.findOneAndDelete(
+            {"identityNo": identity},
+            {projection: {"_id": false, "photo": false}},
+            (err, firedEmployee) => {
+                res.set("Content-Type", "application/json");
+                if (err) {
+                    res.status(404).send({status: err});
+                } else {
+                    res.status(200).send(firedEmployee);
+                }
             }
         );
     }
 )
 // https://www.cncf.io/projects/
 // 2. RPC Style API: gRpc (https://grpc.io)
-    // Protocol Buffers (https://developers.google.com/protocol-buffers)
+// Protocol Buffers (https://developers.google.com/protocol-buffers)
 
 // 3. GraphQL (https://graphql.org)
 
