@@ -1,0 +1,9 @@
+{
+  "identityNo": "11111111110",
+  "fullname": "jack bauer",
+  "iban": "TR680006226239648749742529",
+  "birthYear": 1956,
+  "salary": 100000,
+  "department": "Finance",
+  "fulltime": false
+}

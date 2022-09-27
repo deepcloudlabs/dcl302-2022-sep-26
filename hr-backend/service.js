@@ -91,7 +91,11 @@ console.log(`Server is listening the port ${port}`);
 
 //region swagger-ui configuration
 // rest api documentation
+// https://www.w3.org/Submission/wadl/
+// https://raml.org/
 // https://swagger.io/tools/swagger-ui/
+// https://www.openapis.org/
+
 const swaggerUi = require("swagger-ui-express");
 const openApiDoc = require("./swagger-hr.json");
 api.use("/api-docs",swaggerUi.serve, swaggerUi.setup(openApiDoc));

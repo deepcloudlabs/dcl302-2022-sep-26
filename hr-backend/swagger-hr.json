@@ -169,7 +169,7 @@
         "department": {
           "type": "string"
         },
-        "parttime": {
+        "fulltime": {
           "type": "boolean"
         }
       }
