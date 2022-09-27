@@ -90,18 +90,13 @@ api.listen(port);
 console.log(`Server is listening the port ${port}`);
 //endregion
 
-//region REST on http API
-// 1. Resource-oriented API: Employee <- resource
-// Hire employee -> POST Employee
-// Fire employee -> DELETE tcKimlikNo -> Employee
-// Get info about employee -> GET tcKimlikNo
-// Update employee's salary/iban/department/photo/fulltime -> PUT/PATCH
+//region http get endpoints
 api.get("/hr/api/v1/employees/:identity",async (req,res) =>
     {
         const identity = req.params.identity;
         Employee.findOne(
             {"identityNo": identity},
-            {"_id": false},
+            {"_id": false, "photo": false},
             async (err,emp) => {
                 res.set("Content-Type", "application/json");
                 if (err)
@@ -112,6 +107,53 @@ api.get("/hr/api/v1/employees/:identity",async (req,res) =>
         );
     }
 );
+
+api.get("/hr/api/v1/employees/:identity/photo",async (req,res) =>
+    {
+        const identity = req.params.identity;
+        Employee.findOne(
+            {"identityNo": identity},
+            {"_id": false, "photo": true},
+            async (err,emp) => {
+                res.set("Content-Type", "application/json");
+                if (err)
+                    res.status(404).send({status: err});
+                else
+                    res.status(200).send(emp);
+            }
+        );
+    }
+);
+
+// GET http://localhost:8100/hr/api/v1/employees?page=10&size=25
+api.get("/hr/api/v1/employees",async (req,res) =>
+    {
+        const page = Number(req.query.page || 0);
+        const size = Number(req.query.size || 20);
+        const offset = page * size;
+        Employee.find(
+            {},
+            {"_id": false, "photo": false},
+            {skip: offset, limit: size},
+            async (err,employees) => {
+                res.set("Content-Type", "application/json");
+                if (err)
+                    res.status(404).send({status: err});
+                else
+                    res.status(200).send(employees);
+            }
+        );
+    }
+);
+
+//endregion
+
+//region REST on http API
+// 1. Resource-oriented API: Employee <- resource
+// Hire employee -> POST Employee
+// Fire employee -> DELETE tcKimlikNo -> Employee
+// Get info about employee -> GET tcKimlikNo
+// Update employee's salary/iban/department/photo/fulltime -> PUT/PATCH
 
 // https://www.cncf.io/projects/
 // 2. RPC Style API: gRpc (https://grpc.io)
