@@ -1,5 +1,4 @@
 require("./utils")
-
 //region mongoose and mongodb
 const mongoose = require("mongoose");
 const mongodb_url = "mongodb://localhost:27017/hrdb";
@@ -90,6 +89,15 @@ api.listen(port);
 console.log(`Server is listening the port ${port}`);
 //endregion
 
+//region swagger-ui configuration
+// rest api documentation
+// https://swagger.io/tools/swagger-ui/
+const swaggerUi = require("swagger-ui-express");
+const openApiDoc = require("./swagger-hr.json");
+api.use("/api-docs",swaggerUi.serve, swaggerUi.setup(openApiDoc));
+
+//endregion
+
 //region http get endpoints
 api.get("/hr/api/v1/employees/:identity",async (req,res) =>
     {
@@ -150,11 +158,27 @@ api.get("/hr/api/v1/employees",async (req,res) =>
 
 //region REST on http API
 // 1. Resource-oriented API: Employee <- resource
-// Hire employee -> POST Employee
-// Fire employee -> DELETE tcKimlikNo -> Employee
-// Get info about employee -> GET tcKimlikNo
-// Update employee's salary/iban/department/photo/fulltime -> PUT/PATCH
-
+// ✘ Hire employee -> POST Employee
+// ✘ Fire employee -> DELETE tcKimlikNo -> Employee
+// ✔ Get info about employee(s) -> GET tcKimlikNo
+// ✘ Update employee's salary/iban/department/photo/fulltime -> PUT/PATCH
+api.post("/hr/api/v1/employees", async (req,res)=>
+    {
+        const emp = req.body;
+        emp._id = emp.identityNo;
+        let employee = new Employee(emp);
+        employee.save((err,hiredEmployee)=>
+            {
+               res.set("Content-Type","application/json");
+               if (err){
+                   res.status(400).send({status: err});
+               } else {
+                   res.status(200).send(hiredEmployee);
+               }
+            }
+        );
+    }
+)
 // https://www.cncf.io/projects/
 // 2. RPC Style API: gRpc (https://grpc.io)
     // Protocol Buffers (https://developers.google.com/protocol-buffers)
