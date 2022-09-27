@@ -1,8 +1,7 @@
-const mongoose = require("mongoose");
-const {mongo} = require("mongoose");
 require("./utils")
 
 //region mongoose and mongodb
+const mongoose = require("mongoose");
 const mongodb_url = "mongodb://localhost:27017/hrdb";
 const collection_name = "employees";
 const mongo_opts = {
@@ -92,6 +91,33 @@ console.log(`Server is listening the port ${port}`);
 //endregion
 
 //region REST on http API
+// 1. Resource-oriented API: Employee <- resource
+// Hire employee -> POST Employee
+// Fire employee -> DELETE tcKimlikNo -> Employee
+// Get info about employee -> GET tcKimlikNo
+// Update employee's salary/iban/department/photo/fulltime -> PUT/PATCH
+api.get("/hr/api/v1/employees/:identity",async (req,res) =>
+    {
+        const identity = req.params.identity;
+        Employee.findOne(
+            {"identityNo": identity},
+            {"_id": false},
+            async (err,emp) => {
+                res.set("Content-Type", "application/json");
+                if (err)
+                    res.status(404).send({status: err});
+                else
+                    res.status(200).send(emp);
+            }
+        );
+    }
+);
+
+// https://www.cncf.io/projects/
+// 2. RPC Style API: gRpc (https://grpc.io)
+    // Protocol Buffers (https://developers.google.com/protocol-buffers)
+
+// 3. GraphQL (https://graphql.org)
 
 //endregion
 
