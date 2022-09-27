@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const {mongo} = require("mongoose");
 require("./utils")
 
+//region mongoose and mongodb
 const mongodb_url = "mongodb://localhost:27017/hrdb";
 const collection_name = "employees";
 const mongo_opts = {
@@ -75,3 +76,25 @@ const employeeSchema = new mongoose.Schema({
 
 // Model -> Employee
 const Employee = mongoose.model(collection_name, employeeSchema);
+//endregion
+
+//region express configuration
+const port = 8100;
+const express = require("express");
+const bodyParser = require("body-parser");
+const logger = require("morgan");
+
+const api = express();
+api.use(bodyParser.json({limit: "5mb"}))
+api.use(logger('dev'));
+api.listen(port);
+console.log(`Server is listening the port ${port}`);
+//endregion
+
+//region REST on http API
+
+//endregion
+
+//region REST on ws API
+
+//endregion
