@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const {mongo} = require("mongoose");
+require("./utils")
 
 const mongodb_url = "mongodb://localhost:27017/hrdb";
 const collection_name = "employees";
@@ -53,6 +54,22 @@ const employeeSchema = new mongoose.Schema({
         type: String,
         required: false,
         default: AppConfig.NO_IMAGE
+    },
+    "fulltime": {
+        type: Boolean,
+        required: false,
+        default: true
+    },
+    "department": {
+        type: String,
+        enum: ["Sales", "Finance", "IT", "HR"],
+        required: false,
+        default: "Sales"
+    },
+    "version": {
+        type: String,
+        required: false,
+        default: "1.2.0"
     }
 });
 
