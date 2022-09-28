@@ -1,5 +1,19 @@
 require("./utils")
 
+//region Kafka Producer
+const {Kafka} = require("kafkajs");
+const kafka = new Kafka({
+    clientId: "hr-backend",
+    brokers: ['localhost:9092']
+});
+
+const producer = kafka.producer();
+producer.connect()
+    .then(() => console.log("Connected to the kafka broker..."))
+    .catch(console.error)
+
+//endregion
+
 //region Mongoose -- MongoDB Connection & Configuration
 const mongoose = require("mongoose");
 const mongodb_url = "mongodb://localhost:27017/hrdb";
@@ -93,10 +107,10 @@ console.log(`Server is listening the port ${port}`);
 
 //region CORS
 // CORS Filter
-api.use(function(req,res,next){
-    res.header("Access-Control-Allow-Origin","*");
+api.use(function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Methods", "HEAD, POST, PUT, DELETE, PATCH, GET");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept" );
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
 })
 //endregion
@@ -181,11 +195,11 @@ api.get("/hr/api/v1/employees", async (req, res) => {
 
 const updatableFields = ["salary", "fullname", "department", "fulltime", "iban", "photo"];
 
-async function putOrPatchEmployee(req,res){
+async function putOrPatchEmployee(req, res) {
     const emp = req.body;
     const identity = emp.identityNo;
     let updatedEmp = {};
-    for (let field in emp){
+    for (let field in emp) {
         if (updatableFields.includes(field))
             updatedEmp[field] = emp[field];
     }
@@ -198,13 +212,14 @@ async function putOrPatchEmployee(req,res){
             if (err) {
                 res.status(400).send({status: err});
             } else {
-                res.status(200).send({...document._doc,...updatedEmp});
+                res.status(200).send({...document._doc, ...updatedEmp});
             }
         }
     );
 }
-api.put("/hr/api/v1/employees/:identity",putOrPatchEmployee);
-api.patch("/hr/api/v1/employees/:identity",putOrPatchEmployee);
+
+api.put("/hr/api/v1/employees/:identity", putOrPatchEmployee);
+api.patch("/hr/api/v1/employees/:identity", putOrPatchEmployee);
 
 
 api.post("/hr/api/v1/employees", async (req, res) => {
@@ -217,6 +232,13 @@ api.post("/hr/api/v1/employees", async (req, res) => {
                     res.status(400).send({status: err});
                 } else {
                     // Employee is hired!
+                    let payload = {
+                        "topic": "hr",
+                        "messages": [
+                            {"key": "hr", value: JSON.stringify({type: "hire", data: hiredEmployee})}
+                        ]
+                    }
+                    producer.send(payload);
                     sessions.forEach(session => session.emit('hire', hiredEmployee));
                     res.status(200).send(hiredEmployee);
                 }
@@ -236,6 +258,13 @@ api.delete("/hr/api/v1/employees/:identity", async (req, res) => {
                     res.status(404).send({status: err});
                 } else {
                     // Employee is fired!
+                    let payload = {
+                        "topic": "hr",
+                        "messages": [
+                            {"key": "hr", value: JSON.stringify({type: "fire", data: firedEmployee})}
+                        ]
+                    }
+                    producer.send(payload);
                     sessions.forEach(session => session.emit('fire', firedEmployee));
                     res.status(200).send(firedEmployee);
                 }
@@ -255,18 +284,18 @@ api.delete("/hr/api/v1/employees/:identity", async (req, res) => {
 // ws://localhost:8100
 let sessions = [];
 const socketIo = require("socket.io");
-const io = socketIo(server,{
+const io = socketIo(server, {
     "cors": {
         "origins": "*",
         "methods": ["GET", "POST"]
     }
 });
 io.on('connection', (session) => {
-   console.log(`A new connection is open for session (${session.id})`);
-   sessions.push(session);
-   io.on('disconnect', () => {
+    console.log(`A new connection is open for session (${session.id})`);
+    sessions.push(session);
+    io.on('disconnect', () => {
         console.log(`The session (${session.id}) is closes.`);
-        sessions = sessions.filter( _session => _session.id !== session.id);
-   });
+        sessions = sessions.filter(_session => _session.id !== session.id);
+    });
 });
 //endregion

@@ -12,3 +12,31 @@ client.on("connect", () => {
    });
 
 });
+
+//region Kafka Producer
+const {Kafka} = require("kafkajs");
+const kafka = new Kafka({
+   clientId: "hr-consumer",
+   brokers: ['localhost:9092']
+});
+
+const consumer = kafka.consumer({
+   "groupId": "hr-consumer"
+});
+
+consumer.connect().then(()=>{
+   console.log("Connected to the kafka server.");
+   consumer.subscribe({topic: "hr", fromBeginning: true}).then(() =>{
+      consumer.run({
+         eachMessage: async ({topic, partition, message}) => {
+            console.log(`Received message from ${partition}:${topic}.`);
+            console.log(`Message key: ${message.key}.`);
+            let event = JSON.parse(message.value);
+            console.log(`Event Type: ${event.type}.`);
+            console.log(`Event Data: ${JSON.stringify(event.data)}.`);
+         }
+      });
+   })
+});
+
+//endregion
