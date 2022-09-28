@@ -197,3 +197,71 @@ api.get("/world/api/v1/countries", async (req, res) => {
     }
 );
 //endregion
+
+//region REST on http - Command
+const updatableFields = ["population", "surfaceArea", "gnp", "lifeExpectancy"];
+
+async function putOrPatchCountry(req, res) {
+    const _country = req.body;
+    const countryCode = req.params.country_code;
+    let updatedCountry = {};
+    for (let field in _country) {
+        if (updatableFields.includes(field))
+            updatedCountry[field] = _country[field];
+    }
+    Country.findOneAndUpdate(
+        {"_id": countryCode},
+        {"$set": updatedCountry},
+        {upsert: false},
+        (err, document) => {
+            res.set("Content-Type", "application/json");
+            if (err) {
+                res.status(400).send({status: err});
+            } else {
+                res.status(200).send({...document._doc, ...updatedCountry});
+            }
+        }
+    );
+}
+
+// curl -X PATCH http://localhost:3100/world/api/v1/countries/AAA -d "{\"_id\": \"AAA\", \"population\": 100 }" -H "Content-Type: application/json" -H "Accept: application/json"
+
+api.put("/world/api/v1/countries/:country_code", putOrPatchCountry);
+api.patch("/world/api/v1/countries/:country_code", putOrPatchCountry);
+
+// POST http://localhost:3100/world/api/v1/countries
+// curl -X POST http://localhost:3100/world/api/v1/countries -d "{\"_id\": \"AAA\", \"cities\": [], \"continent\": \"Asia\", \"gnp\": 4, \"governmentForm\": \"Emirate\", \"headOfState\": \"Binnur Kurt\", \"indepYear\": 2022, \"lifeExpectancy\": 3, \"localName\": \"Your Country\", \"name\": \"My Country\", \"population\": 1, \"region\": \"Southern and Central Asia\", \"surfaceArea\": 2 }" -H "Content-Type: application/json" -H "Accept: application/json"
+api.post("/world/api/v1/countries", async (req, res) => {
+        const payload = req.body;
+        let country = new Country(payload);
+        country.save((err, savedCountry) => {
+                res.set("Content-Type", "application/json");
+                if (err) {
+                    res.status(400).send({status: err});
+                } else {
+                    res.status(200).send(savedCountry);
+                }
+            }
+        );
+    }
+)
+
+// DELETE http://localhost:3100/world/api/v1/countries/AAA
+// curl -X DELETE http://localhost:3100/world/api/v1/countries/AAA
+api.delete("/world/api/v1/countries/:country_code", async (req, res) => {
+        const countryCode = req.params.country_code;
+        Country.findOneAndDelete(
+            {"_id": countryCode},
+            {projection: {"cities": false}},
+            (err, removedCountry) => {
+                res.set("Content-Type", "application/json");
+                if (err) {
+                    res.status(404).send({status: err});
+                } else {
+                     res.status(200).send(removedCountry);
+                }
+            }
+        );
+    }
+)
+//endregion
