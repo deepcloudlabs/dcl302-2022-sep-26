@@ -27,9 +27,11 @@ class DashboardViewModel {
         this.socket = io(AppConfig.WS_URL)
         this.socket.on('connect', () => {
             toastr.success("Connected to the websocket server!");
-            this.socket.on('trade', (trade) => {
+            this.connected(true);
+            this.socket.on('trade', (frame) => {
+                let trade = JSON.parse(frame);
                 if (!this.isMonitoring()) return;
-                this.data.datasets[0].data.push(Number(trade.price));
+                this.data.datasets[0].data.push(Number(trade.p));
                 let now = new Date().toTimeString();
                 now = now.replace(/.*(\d{2}:\d{2}:\d{2}).*/, '$1');
                 this.data.labels.push(now);
