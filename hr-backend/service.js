@@ -216,6 +216,8 @@ api.post("/hr/api/v1/employees", async (req, res) => {
                 if (err) {
                     res.status(400).send({status: err});
                 } else {
+                    // Employee is hired!
+                    sessions.forEach(session => session.emit('hire', hiredEmployee));
                     res.status(200).send(hiredEmployee);
                 }
             }
@@ -233,6 +235,8 @@ api.delete("/hr/api/v1/employees/:identity", async (req, res) => {
                 if (err) {
                     res.status(404).send({status: err});
                 } else {
+                    // Employee is fired!
+                    sessions.forEach(session => session.emit('fire', firedEmployee));
                     res.status(200).send(firedEmployee);
                 }
             }
@@ -248,6 +252,21 @@ api.delete("/hr/api/v1/employees/:identity", async (req, res) => {
 //endregion
 
 //region REST on ws
-
-
+// ws://localhost:8100
+let sessions = [];
+const socketIo = require("socket.io");
+const io = socketIo(server,{
+    "cors": {
+        "origins": "*",
+        "methods": ["GET", "POST"]
+    }
+});
+io.on('connection', (session) => {
+   console.log(`A new connection is open for session (${session.id})`);
+   sessions.push(session);
+   io.on('disconnect', () => {
+        console.log(`The session (${session.id}) is closes.`);
+        sessions = sessions.filter( _session => _session.id !== session.id);
+   });
+});
 //endregion

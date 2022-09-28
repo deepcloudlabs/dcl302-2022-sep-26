@@ -4,7 +4,9 @@
   "description": "HR Backend with REST API (http+ws)",
   "main": "service.js",
   "scripts": {
-    "service": "nodemon service.js"
+    "service": "nodemon service.js",
+    "client": "node client.js",
+    "create-topic-hr": "node create-topic.js"
   },
   "dependencies": {
     "nodemon": "^2.0.20",
@@ -13,7 +15,9 @@
     "body-parser": "^1.20.0",
     "morgan": "^1.10.0",
     "socket.io": "^4.5.2",
-    "swagger-ui-express": "^4.5.0"
+    "socket.io-client": "^4.5.2",
+    "swagger-ui-express": "^4.5.0",
+    "kafkajs": "1.14.0"
   },
   "keywords": [],
   "author": "",
