@@ -180,10 +180,11 @@ api.get("/world/api/v1/continents", async (req, res) => {
 // curl -X GET "http://localhost:3100/world/api/v1/countries?page=0&size=10"
 api.get("/world/api/v1/countries", async (req, res) => {
         const page = Number(req.query.page || 0);
-        const size = Number(req.query.size || 20);
+        const size = Number(req.query.size || 50);
+        const continent = req.query.continent || "Asia";
         const offset = page * size;
         Country.find(
-            {},
+            {"continent": continent},
             {"cities": false},
             {skip: offset, limit: size},
             async (err, countries) => {
