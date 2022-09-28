@@ -1,5 +1,6 @@
 require("./utils")
-//region mongoose and mongodb
+
+//region Mongoose -- MongoDB Connection & Configuration
 const mongoose = require("mongoose");
 const mongodb_url = "mongodb://localhost:27017/hrdb";
 const collection_name = "employees";
@@ -7,13 +8,13 @@ const mongo_opts = {
     "useNewUrlParser": true,
     "socketTimeoutMS": 0,
     "keepAlive": true,
-    "useCreateIndex": true,
-    "useFindAndModify": false,
     "useUnifiedTopology": true
 };
 
 mongoose.connect(mongodb_url, mongo_opts);
+//endregion
 
+//region Mongoose -- Employee Schema
 const employeeSchema = new mongoose.Schema({
     "_id": {
         type: String,
@@ -53,7 +54,7 @@ const employeeSchema = new mongoose.Schema({
     "photo": {
         type: String,
         required: false,
-        default: AppConfig.NO_IMAGE
+        default: AppConfig.NO_IMAGE_RAW
     },
     "fulltime": {
         type: Boolean,
@@ -77,7 +78,7 @@ const employeeSchema = new mongoose.Schema({
 const Employee = mongoose.model(collection_name, employeeSchema);
 //endregion
 
-//region express configuration
+//region Express.js Configuration
 const port = 8100;
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -86,11 +87,21 @@ const logger = require("morgan");
 const api = express();
 api.use(bodyParser.json({limit: "5mb"}))
 api.use(logger('dev'));
-api.listen(port);
+const server = api.listen(port);
 console.log(`Server is listening the port ${port}`);
 //endregion
 
-//region swagger-ui configuration
+//region CORS
+// CORS Filter
+api.use(function(req,res,next){
+    res.header("Access-Control-Allow-Origin","*");
+    res.header("Access-Control-Allow-Methods", "HEAD, POST, PUT, DELETE, PATCH, GET");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept" );
+    next();
+})
+//endregion
+
+//region Swagger UI Configuration
 // rest api documentation
 // https://www.w3.org/Submission/wadl/
 // https://raml.org/
@@ -103,12 +114,12 @@ api.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiDoc));
 
 //endregion
 
-//region http get endpoints
+//region REST on http - Query
 api.get("/hr/api/v1/employees/:identity", async (req, res) => {
         const identity = req.params.identity;
         Employee.findOne(
             {"identityNo": identity},
-            {"_id": false, "photo": false},
+            {"_id": false},
             async (err, emp) => {
                 res.set("Content-Type", "application/json");
                 if (err)
@@ -143,7 +154,7 @@ api.get("/hr/api/v1/employees", async (req, res) => {
         const offset = page * size;
         Employee.find(
             {},
-            {"_id": false, "photo": false},
+            {"_id": false},
             {skip: offset, limit: size},
             async (err, employees) => {
                 res.set("Content-Type", "application/json");
@@ -158,7 +169,7 @@ api.get("/hr/api/v1/employees", async (req, res) => {
 
 //endregion
 
-//region REST on http API
+//region REST on http - Command
 // 1. Resource-oriented API: Employee <- resource
 // ✔ Hire employee -> POST Employee
 // ✔ Fire employee -> DELETE tcKimlikNo -> Employee
@@ -236,6 +247,7 @@ api.delete("/hr/api/v1/employees/:identity", async (req, res) => {
 
 //endregion
 
-//region REST on ws API
+//region REST on ws
+
 
 //endregion
