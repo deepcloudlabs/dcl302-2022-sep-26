@@ -1,0 +1,5 @@
+Binance Trade Event -- WS --> Kafka Topic --> Consumer --> Socket-IO --> Front-end
+                              (server.js)    (backend.js)               https://courseware.deepcloudlabs.com/siemens/dcl302/lab-files/binance-frontend-ko.zip
+                              <<producer>>    <<consumer>>
+                              websocket       socket-io
+                              kafka producer  kafka consumer
